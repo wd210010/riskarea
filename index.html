@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>全国点状图，用于疫情防控风险区观察</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="initial-scale=1.1, user-scalable=no">
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map_container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        .panel {
+            position: absolute;
+            z-index: 99;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .redpoint {
+            color: #F00
+        }
+
+        .ypoint {
+            color: rgba(253, 200, 0, 1);
+        }
+    </style>
+    <script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=B2GL0ohpoLwUGfSwEuyllsd3oEhAm4iX"></script>
+    <script src="https://mapv.baidu.com/build/mapv.min.js"></script>
+    <script src="https://mapv.baidu.com/gl/examples/static/common.js"></script>
+    <script src="https://unpkg.com/mapvgl/dist/mapvgl.min.js"></script>
+</head>
+<body>
+<div id="map_container"></div>
+<div class="panel">
+    全国中高风险地区分布图<br>2022-09-25 11时更新<br>
+    <div class="redpoint">高风险地区653个</div>
+    <div class="ypoint">中风险地区759个</div>
+    基于百度地址解析,仅供参考<br>
+    作者不对定位准确度负责<br>
+</div>
+<script>
+    var map = initMap({
+        tilt: 0,
+        heading: 0,
+        center: [110.348145, 37.976416],
+        zoom: 5,
+        style: purpleStyle
+    });
+
+
+    var view = new mapvgl.View({
+        map: map
+    });
+    //引入高风险地区位置数据
+    fetch('data/high_risk_data 2022-09-25 11时.json').then(rs => {
+        return rs.json();
+    }).then(rs => {
+        var data = [];
+        for (var i = 0; i < rs.length; i++) {
+            var geoCoord = rs[i]
+            data.push({
+                geometry: {
+                    type: 'Point',
+                    coordinates: geoCoord
+                },
+                properties: {
+                    time: Math.random() * 100
+                }
+            });
+        }
+        //显示高风险地区数据点位
+        view.addLayer(new mapvgl.PointLayer({
+            blend: 'lighter',
+            shape: 'circle',
+            color: 'rgba(255,77,77,0.8)',
+            data: data,
+            size: 2.5
+        }));
+        view.addLayer(new mapvgl.PointTripLayer({
+            blend: 'lighter',
+            shape: 'circle',
+            startTime: 0,
+            endTime: 100,
+            step: 0.1,
+            trailLength: 10,
+            color: 'rgba(255, 77,77, 0.6)', // 点动画图层颜色
+            data: data,
+            size: 2.5
+        }));
+    });
+    //引入中风险地区位置数据
+    fetch('data/middle_risk_data 2022-09-25 11时.json').then(res => {
+        return res.json();
+    }).then(res => {
+        var data2 = [];
+        for (var i = 0; i < res.length; i++) {
+            var geoCoordm = res[i]
+            data2.push({
+                geometry: {
+                    type: 'Point',
+                    coordinates: geoCoordm
+                },
+                properties: {
+                    time: Math.random() * 100
+                }
+            });
+        }
+        //显示中风险点位置
+        view.addLayer(new mapvgl.PointLayer({
+            blend: 'lighter',
+            shape: 'circle',
+            color: 'rgba(253,200,0,0.8)',
+            data: data2,
+            size: 2
+        }));
+        view.addLayer(new mapvgl.PointTripLayer({
+            blend: 'lighter',
+            shape: 'circle',
+            startTime: 0,
+            endTime: 100,
+            step: 0.1,
+            trailLength: 10,
+            color: 'rgba(255, 255,0, 0.6)', // 点动画图层颜色
+            data: data2,
+            size: 2
+        }));
+    });
+</script>
+</body>
+</html>
