@@ -49,9 +49,9 @@
 <body>
 <div id="map_container"></div>
 <div class="panel">
-    全国中高风险地区分布图<br>2022-09-25 11时更新<br>
-    <div class="redpoint">高风险地区653个</div>
-    <div class="ypoint">中风险地区759个</div>
+    全国中高风险地区分布图<br>2022-09-25 20时更新<br>
+    <div class="redpoint">高风险地区687个</div>
+    <div class="ypoint">中风险地区820个</div>
     基于百度地址解析,仅供参考<br>
     作者不对定位准确度负责<br>
 </div>
@@ -69,12 +69,12 @@
         map: map
     });
     //引入高风险地区位置数据
-    fetch('data/high_risk_data 2022-09-25 11时.json').then(rs => {
+    fetch('data/high_risk_data 2022-09-25 20时.json').then(rs => {
         return rs.json();
     }).then(rs => {
         var data = [];
         for (var i = 0; i < rs.length; i++) {
-            var geoCoord = rs[i]
+            var geoCoord = [Number(rs[i].split(',')[0]), Number(rs[i].split(',')[1])]
             data.push({
                 geometry: {
                     type: 'Point',
@@ -106,12 +106,12 @@
         }));
     });
     //引入中风险地区位置数据
-    fetch('data/middle_risk_data 2022-09-25 11时.json').then(res => {
+    fetch('data/middle_risk_data 2022-09-25 20时.json').then(res => {
         return res.json();
     }).then(res => {
         var data2 = [];
         for (var i = 0; i < res.length; i++) {
-            var geoCoordm = res[i]
+            var geoCoordm = [Number(res[i].split(',')[0]), Number(res[i].split(',')[1])]
             data2.push({
                 geometry: {
                     type: 'Point',
