@@ -49,13 +49,124 @@
 <body>
 <div id="map_container"></div>
 <div class="panel">
-    全国中高风险地区分布图<br>2022-09-27 16时更新<br>
-    <div class="redpoint">高风险地区822个</div>
-    <div class="ypoint">中风险地区709个</div>
-    基于百度地址解析,仅供参考<br>
-    作者不对定位准确度负责<br>
+    全国中高风险地区分布图
+    <div id="public_dt">最新发布时间</div>
+    <div class="redpoint" id="high_riskarea_number">高风险地区898个</div>
+    <div class="ypoint" id="middle_riskarea_number">中风险地区716个</div>
+    <div>基于百度地址解析，仅供参考</div>
+    <div>作者不对定位准确度负责</div>
 </div>
 <script>
+    // 页面载入时，自动获取最新发布日期时间
+    var public_date = '';
+    var public_time = '';
+    var high_riskarea_number = '';
+    var middle_riskarea_number = '';
+    window.onload = loadXMLDoc()
+
+    function loadXMLDoc() {
+        var xmlhttp;
+        if (window.XMLHttpRequest) {
+            xmlhttp = new XMLHttpRequest();
+        } else {
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp.onreadystatechange = function () {
+            console.log(xmlhttp.readyState)
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                var myArr = JSON.parse(this.responseText);
+                document.getElementById('public_dt').innerHTML = newdate(myArr);
+                document.getElementById('high_riskarea_number').innerHTML = "高风险地区" + high_riskarea_number + "个";
+                document.getElementById('middle_riskarea_number').innerHTML = "中风险地区" + middle_riskarea_number + "个";
+                console.log(public_date + ' ' + public_time + '时')
+                show_riskarea('high') //显示高风险地区点位
+                show_riskarea('middle') //显示中风险地区点位
+            }
+        }
+        xmlhttp.open('get', 'http://139.196.148.209:8080/newdate', true);
+        xmlhttp.setRequestHeader("Content-Type", "text/plain");
+        xmlhttp.send();
+    }
+
+    function newdate(myArr) {
+        var dt = myArr.msg.split(',');
+        public_time = dt[1];
+        public_date = dt[0];
+        high_riskarea_number = dt[2];
+        middle_riskarea_number = dt[3];
+        return dt[0] + ' ' + dt[1] + '时更新'
+    }
+
+    function show_riskarea(grade) {
+        var params = 'date=' + public_date + '&time=' + public_time + '&grade=' + grade;
+        console.log(params)
+        fetch('http://139.196.148.209:8080/getdata?' + params, {
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(rs => {
+            return rs.json();
+        }).then(rs => {
+            var data = [];
+            for (var i = 0; i < rs.msg.length; i++) {
+                var geoCoord = [Number(rs.msg[i].split(',')[0]), Number(rs.msg[i].split(',')[1])]
+                data.push({
+                    geometry: {
+                        type: 'Point',
+                        coordinates: geoCoord
+                    },
+                    properties: {
+                        time: Math.random() * 100
+                    }
+                });
+            }
+            // console.log(data)
+            //显示高风险地区数据点位
+            if (grade == 'high') {
+                view.addLayer(new mapvgl.PointLayer({
+                    blend: 'lighter',
+                    shape: 'circle',
+                    color: 'rgba(255,77,77,0.8)',
+                    data: data,
+                    size: 2.5
+                }));
+                view.addLayer(new mapvgl.PointTripLayer({
+                    blend: 'lighter',
+                    shape: 'circle',
+                    startTime: 0,
+                    endTime: 100,
+                    step: 0.1,
+                    trailLength: 10,
+                    color: 'rgba(255, 77,77, 0.6)', // 点动画图层颜色
+                    data: data,
+                    size: 2.5
+                }));
+            }
+            if (grade == 'middle') {
+                view.addLayer(new mapvgl.PointLayer({
+                    blend: 'lighter',
+                    shape: 'circle',
+                    color: 'rgba(253,200,0,0.8)',
+                    data: data,
+                    size: 2
+                }));
+                view.addLayer(new mapvgl.PointTripLayer({
+                    blend: 'lighter',
+                    shape: 'circle',
+                    startTime: 0,
+                    endTime: 100,
+                    step: 0.1,
+                    trailLength: 10,
+                    color: 'rgba(255, 255,0, 0.6)', // 点动画图层颜色
+                    data: data,
+                    size: 2
+                }));
+            }
+        });
+    }
+
+
     var map = initMap({
         tilt: 0,
         heading: 0,
@@ -68,80 +179,7 @@
     var view = new mapvgl.View({
         map: map
     });
-    //引入高风险地区位置数据
-    fetch('data/high_risk_data 2022-09-27 16时.json').then(rs => {
-        return rs.json();
-    }).then(rs => {
-        var data = [];
-        for (var i = 0; i < rs.length; i++) {
-            var geoCoord = [Number(rs[i].split(',')[0]), Number(rs[i].split(',')[1])]
-            data.push({
-                geometry: {
-                    type: 'Point',
-                    coordinates: geoCoord
-                },
-                properties: {
-                    time: Math.random() * 100
-                }
-            });
-        }
-        //显示高风险地区数据点位
-        view.addLayer(new mapvgl.PointLayer({
-            blend: 'lighter',
-            shape: 'circle',
-            color: 'rgba(255,77,77,0.8)',
-            data: data,
-            size: 2.5
-        }));
-        view.addLayer(new mapvgl.PointTripLayer({
-            blend: 'lighter',
-            shape: 'circle',
-            startTime: 0,
-            endTime: 100,
-            step: 0.1,
-            trailLength: 10,
-            color: 'rgba(255, 77,77, 0.6)', // 点动画图层颜色
-            data: data,
-            size: 2.5
-        }));
-    });
-    //引入中风险地区位置数据
-    fetch('data/middle_risk_data 2022-09-27 16时.json').then(res => {
-        return res.json();
-    }).then(res => {
-        var data2 = [];
-        for (var i = 0; i < res.length; i++) {
-            var geoCoordm = [Number(res[i].split(',')[0]), Number(res[i].split(',')[1])]
-            data2.push({
-                geometry: {
-                    type: 'Point',
-                    coordinates: geoCoordm
-                },
-                properties: {
-                    time: Math.random() * 100
-                }
-            });
-        }
-        //显示中风险点位置
-        view.addLayer(new mapvgl.PointLayer({
-            blend: 'lighter',
-            shape: 'circle',
-            color: 'rgba(253,200,0,0.8)',
-            data: data2,
-            size: 2
-        }));
-        view.addLayer(new mapvgl.PointTripLayer({
-            blend: 'lighter',
-            shape: 'circle',
-            startTime: 0,
-            endTime: 100,
-            step: 0.1,
-            trailLength: 10,
-            color: 'rgba(255, 255,0, 0.6)', // 点动画图层颜色
-            data: data2,
-            size: 2
-        }));
-    });
+
 </script>
 </body>
 </html>
