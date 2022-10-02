@@ -9,9 +9,6 @@ import cx_Oracle
 
 cx_Oracle.init_oracle_client(lib_dir="/lib/oracle/lib/")
 
-#cx_Oracle.init_oracle_client(lib_dir="/Users/gaopeng/lib/")
-#cx_Oracle.init_oracle_client('C:\oracle\instantclient_21_6')
-
 # 时间戳  1663384497
 timestamp = str(int((time.time())))
 # 其他参数
@@ -68,12 +65,15 @@ response = requests.post(url, headers=headers, json=params)
 data_dict = json.loads(response.text)
 # 获得风险表发布的日期和事件
 public_time = data_dict['data']['end_update_time'].split()
+#获得高风险地区数量
+high_count = data_dict['data']['hcount']
+middle_count = data_dict['data']['mcount']
 
 # 保存risk_data 日期 时间.log
 filepath = './data/risk_data' + ' ' + public_time[0] + ' ' + public_time[1] + '.log'
 with open('./data/risk_data' + ' ' + public_time[0] + ' ' + public_time[1] + '.log', 'w', encoding='utf-8') as f:
     f.write(response.text)
-    print("%s数据写入文件" % public_time[0] + public_time[1])
+    print("%s发布数据写入文件,其中高风险地区%s个，中风险地区%s个" % (public_time[0] + public_time[1], high_count, middle_count)
 
 
 # 地址转换为经纬度函数,输出为字符串'117.23456789899,39.12167079728333'
@@ -134,26 +134,7 @@ def get_risk_area_info(areas, risk_grade):
     df['location'] = gd_list
     return df
 
-
-# 得到两个df中高风险地区
-df_high = get_risk_area_info(data_dict, 'high')
-df_middle = get_risk_area_info(data_dict, 'middle')
-
-# 中高风险经纬度写入各自的json文件["117.27401777740407,39.123992248811625", "117.26206061242185,39.14177694126339",...]
-high_path = './data/high_risk_data ' + public_time[0] + ' ' + public_time[1] + '.json'
-# 高风险地区经纬度写入json文件
-with open(high_path, 'w') as f:
-    # location由dataframe转化为list后才能json格式化
-    json.dump(np.array(df_high['location']).tolist(), f)
-    print('已写入%s文件' % high_path)
-# 中风险地区经纬度写入json文件
-middle_path = './data/middle_risk_data ' + public_time[0] + ' ' + public_time[1] + '.json'
-with open(middle_path, 'w') as f:
-    json.dump(np.array(df_middle['location']).tolist(), f)
-    print('已写入%s文件。' % middle_path)
-
-
-# 两个df写入oracle数据库
+# df写入oracle数据库
 # df to_sql写入速度很慢.缺省情况下，Pandas + SQLAlchemy将所有object(字符串 df.info()查看)列保存为Oracle DB中的CLOB，这使插入速度非常慢，需要给每个字符串改变类别为varchar
 def write_to_oracle(df):
     engine = sqlalchemy.create_engine("oracle+cx_oracle://c##riskarea:Ben800208@124.221.228.171:1524/ORCLCDB")
@@ -166,6 +147,26 @@ def write_to_oracle(df):
     df.to_sql('risk_area', engine, index=False, if_exists='append', dtype=type_list)
     print('写入oracle数据库完成，共%d条数据' % (len(df)))
 
+# 得到高风险地区df
+df_high = get_risk_area_info(data_dict, 'high')
+# 中高风险经纬度写入各自的json文件["117.27401777740407,39.123992248811625", "117.26206061242185,39.14177694126339",...]
+high_path = './data/high_risk_data ' + public_time[0] + ' ' + public_time[1] + '.json'
+# 高风险地区经纬度写入json文件
+with open(high_path, 'w') as f:
+    # location由dataframe转化为list后才能json格式化
+    json.dump(np.array(df_high['location']).tolist(), f)
+    print('已写入%s文件' % high_path)
 
+#高风险地区数据写入数据库
 write_to_oracle(df_high)
+
+# 得到中风险地区df
+df_middle = get_risk_area_info(data_dict, 'middle')
+# 中风险地区经纬度写入json文件
+middle_path = './data/middle_risk_data ' + public_time[0] + ' ' + public_time[1] + '.json'
+with open(middle_path, 'w') as f:
+    json.dump(np.array(df_middle['location']).tolist(), f)
+    print('已写入%s文件。' % middle_path)
+
+#中风险地区数据写入数据库
 write_to_oracle(df_middle)
