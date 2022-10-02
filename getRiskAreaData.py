@@ -7,10 +7,10 @@ import numpy as np
 import sqlalchemy
 import cx_Oracle
 
-cx_Oracle.init_oracle_client(lib_dir="/lib/oracle/lib/")
+# cx_Oracle.init_oracle_client(lib_dir="/lib/oracle/lib/")
 
 #cx_Oracle.init_oracle_client(lib_dir="/Users/gaopeng/lib/")
-#cx_Oracle.init_oracle_client('C:\oracle\instantclient_21_6')
+cx_Oracle.init_oracle_client('C:\oracle\instantclient_21_6')
 
 # 时间戳  1663384497
 timestamp = str(int((time.time())))
