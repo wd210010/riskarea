@@ -40,6 +40,11 @@
         .ypoint {
             color: rgba(253, 200, 0, 1);
         }
+
+        .btn {
+            display:flex;
+            display:inline-block;
+        }
     </style>
     <script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=B2GL0ohpoLwUGfSwEuyllsd3oEhAm4iX"></script>
     <script src="https://mapv.baidu.com/build/mapv.min.js"></script>
@@ -55,13 +60,73 @@
     <div class="ypoint" id="middle_riskarea_number">中风险地区716个</div>
     <div>基于百度地址解析，仅供参考</div>
     <div>作者不对定位准确度负责</div>
-</div>
+    <br>
+    <div id="w1" style="position:relative;margin:auto">
+        <button type="button" class="btn" onclick="loadLastDaysData()">上一天</button>
+        <button type="button" class="btn" onclick="loadNextDaysData()">下一天</button>
+    </div>
 <script>
     // 页面载入时，自动获取最新发布日期时间
     var public_date = '';
     var public_time = '';
     var high_riskarea_number = '';
     var middle_riskarea_number = '';
+    var url = 'http://139.196.148.209:8080'
+
+    var map = initMap({
+        tilt: 0,
+        heading: 0,
+        center: [110.348145, 37.976416],
+        zoom: 5,
+        style: purpleStyle
+    });
+
+    var view = new mapvgl.View({
+        map: map
+    });
+
+    var layer_h = new mapvgl.PointLayer({
+        blend: 'lighter',
+        shape: 'circle',
+        color: 'rgba(255,77,77,0.8)',
+        size: 2.5
+    })
+    view.addLayer(layer_h);
+
+    var layer_h2 = new mapvgl.PointTripLayer({
+        blend: 'lighter',
+        shape: 'circle',
+        startTime: 0,
+        endTime: 100,
+        step: 0.1,
+        trailLength: 10,
+        color: 'rgba(255, 77,77, 0.6)', // 点动画图层颜色
+        size: 2.5
+    })
+    view.addLayer(layer_h2);
+
+    layer_m = new mapvgl.PointLayer({
+        blend: 'lighter',
+        shape: 'circle',
+        color: 'rgba(253,200,0,0.8)',
+        size: 2
+    })
+    view.addLayer(layer_m);
+
+    layer_m2 = new mapvgl.PointTripLayer({
+        blend: 'lighter',
+        shape: 'circle',
+        startTime: 0,
+        endTime: 100,
+        step: 0.1,
+        trailLength: 10,
+        color: 'rgba(255, 255,0, 0.6)', // 点动画图层颜色
+        size: 2
+    })
+    view.addLayer(layer_m2);
+
+
+
     window.onload = loadXMLDoc()
 
     function loadXMLDoc() {
@@ -83,7 +148,7 @@
                 show_riskarea('middle') //显示中风险地区点位
             }
         }
-        xmlhttp.open('get', 'http://139.196.148.209:8080/newdate', true);
+        xmlhttp.open('get', url+'/newdate', true);
         xmlhttp.setRequestHeader("Content-Type", "text/plain");
         xmlhttp.send();
     }
@@ -100,7 +165,7 @@
     function show_riskarea(grade) {
         var params = 'date=' + public_date + '&time=' + public_time + '&grade=' + grade;
         console.log(params)
-        fetch('http://139.196.148.209:8080/getdata?' + params, {
+        fetch(url+'/getdata?' + params, {
             method: 'post',
             headers: {
                 'Content-Type': 'application/json'
@@ -124,62 +189,85 @@
             // console.log(data)
             //显示高风险地区数据点位
             if (grade == 'high') {
-                view.addLayer(new mapvgl.PointLayer({
-                    blend: 'lighter',
-                    shape: 'circle',
-                    color: 'rgba(255,77,77,0.8)',
-                    data: data,
-                    size: 2.5
-                }));
-                view.addLayer(new mapvgl.PointTripLayer({
-                    blend: 'lighter',
-                    shape: 'circle',
-                    startTime: 0,
-                    endTime: 100,
-                    step: 0.1,
-                    trailLength: 10,
-                    color: 'rgba(255, 77,77, 0.6)', // 点动画图层颜色
-                    data: data,
-                    size: 2.5
-                }));
+                layer_h.setData(data);
+                layer_h2.setData(data);
             }
             if (grade == 'middle') {
-                view.addLayer(new mapvgl.PointLayer({
-                    blend: 'lighter',
-                    shape: 'circle',
-                    color: 'rgba(253,200,0,0.8)',
-                    data: data,
-                    size: 2
-                }));
-                view.addLayer(new mapvgl.PointTripLayer({
-                    blend: 'lighter',
-                    shape: 'circle',
-                    startTime: 0,
-                    endTime: 100,
-                    step: 0.1,
-                    trailLength: 10,
-                    color: 'rgba(255, 255,0, 0.6)', // 点动画图层颜色
-                    data: data,
-                    size: 2
-                }));
+                layer_m.setData(data);
+                layer_m2.setData(data);
             }
         });
     }
 
 
-    var map = initMap({
-        tilt: 0,
-        heading: 0,
-        center: [110.348145, 37.976416],
-        zoom: 5,
-        style: purpleStyle
-    });
 
 
-    var view = new mapvgl.View({
-        map: map
-    });
+    // 日期对象转换为字符串 yyyy-MM-dd
+    function formatDate(date){
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        m = m < 10 ? '0' + m : m;
+        var d = date.getDate();
+        d = d < 10 ? ('0' + d) : d;
+        return y + '-' + m + '-' + d;
+    }
 
+    function loadLastDaysData(date) {
+        var curdate = new Date(public_date)
+        // 得到前一日的日期字符串格式
+        predate = formatDate(new Date(curdate.getTime() - 24*60*60*1000))
+        console.log(predate)
+        // 得到前一日的索引数据
+        var xmlhttp2;
+        if (window.XMLHttpRequest) {
+            xmlhttp2 = new XMLHttpRequest();
+        } else {
+            xmlhttp2 = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp2.onreadystatechange = function () {
+            if (xmlhttp2.readyState == 4 && xmlhttp2.status == 200) {
+                var myArr = JSON.parse(this.responseText);
+                document.getElementById('public_dt').innerHTML = newdate(myArr);
+                document.getElementById('high_riskarea_number').innerHTML = "高风险地区" + high_riskarea_number + "个";
+                document.getElementById('middle_riskarea_number').innerHTML = "中风险地区" + middle_riskarea_number + "个";
+                console.log(public_date + ' ' + public_time + '时')
+                show_riskarea('high') //显示高风险地区点位
+                show_riskarea('middle') //显示中风险地区点位
+            }
+        }
+        xmlhttp2.open('get', url+'/newdate?date='+predate, true);
+        xmlhttp2.setRequestHeader("Content-Type", "text/plain");
+        xmlhttp2.send();
+        // 根据日期和时间获得中高风险地区经纬度
+    }
+
+    function loadNextDaysData(){
+        var curdate = new Date(public_date)
+        // 得到前一日的日期字符串格式
+        nextdate = formatDate(new Date(curdate.getTime() + 24*60*60*1000))
+        console.log(nextdate)
+        // 得到前一日的索引数据
+        var xmlhttp3;
+        if (window.XMLHttpRequest) {
+            xmlhttp3 = new XMLHttpRequest();
+        } else {
+            xmlhttp3 = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp3.onreadystatechange = function () {
+            if (xmlhttp3.readyState == 4 && xmlhttp3.status == 200) {
+                var myArr = JSON.parse(this.responseText);
+                document.getElementById('public_dt').innerHTML = newdate(myArr);
+                document.getElementById('high_riskarea_number').innerHTML = "高风险地区" + high_riskarea_number + "个";
+                document.getElementById('middle_riskarea_number').innerHTML = "中风险地区" + middle_riskarea_number + "个";
+                console.log(public_date + ' ' + public_time + '时')
+                show_riskarea('high') //显示高风险地区点位
+                show_riskarea('middle') //显示中风险地区点位
+            }
+        }
+        xmlhttp3.open('get', url+'/newdate?date='+nextdate, true);
+        xmlhttp3.setRequestHeader("Content-Type", "text/plain");
+        xmlhttp3.send();
+    }
 </script>
 </body>
 </html>
