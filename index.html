@@ -46,6 +46,8 @@
             display: inline-block;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://api.map.baidu.com/api?v=1.0&type=webgl&ak=B2GL0ohpoLwUGfSwEuyllsd3oEhAm4iX"></script>
     <script src="https://mapv.baidu.com/build/mapv.min.js"></script>
     <script src="https://mapv.baidu.com/gl/examples/static/common.js"></script>
@@ -63,7 +65,7 @@
     <br>
     <div id="w1" style="position:relative;margin:auto">
         <button class="btn" onclick="loadLastDaysData()" type="button">上一天</button>
-
+        <input id="myID" class=flatpickr data-date-format="Y-m-d">
         <button class="btn" onclick="loadNextDaysData()" type="button">下一天</button>
     </div>
     <script>
@@ -144,6 +146,15 @@
                     document.getElementById('high_riskarea_number').innerHTML = "高风险地区" + high_riskarea_number + "个";
                     document.getElementById('middle_riskarea_number').innerHTML = "中风险地区" + middle_riskarea_number + "个";
                     console.log(public_date + ' ' + public_time + '时')
+                    flatpickr("#myID",{
+                        locale: "zh",
+                        dateFormat:"Y-m-d",
+                        defaultDate: public_date,
+                        onChange: function(dateObj,dataStr,instance){
+                            public_date = dataStr
+                            loadData(dataStr);
+                        }
+                    })
                     show_riskarea('high') //显示高风险地区点位
                     show_riskarea('middle') //显示中风险地区点位
                 }
@@ -151,7 +162,10 @@
             xmlhttp.open('get', url + '/newdate', true);
             xmlhttp.setRequestHeader("Content-Type", "text/plain");
             xmlhttp.send();
+
+
         }
+
 
         function newdate(myArr) {
             var dt = myArr.msg.split(',');
@@ -223,6 +237,15 @@
                     document.getElementById('high_riskarea_number').innerHTML = "高风险地区" + high_riskarea_number + "个";
                     document.getElementById('middle_riskarea_number').innerHTML = "中风险地区" + middle_riskarea_number + "个";
                     console.log(public_date + ' ' + public_time + '时')
+                    flatpickr("#myID",{
+                        locale: "zh",
+                        dateFormat:"Y-m-d",
+                        defaultDate: public_date,
+                        onChange: function(dateObj,dataStr,instance){
+                            public_date = dataStr
+                            loadData(dataStr);
+                        }
+                    })
                     show_riskarea('high') //显示高风险地区点位
                     show_riskarea('middle') //显示中风险地区点位
                 }
