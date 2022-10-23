@@ -70,8 +70,8 @@ data_dict = json.loads(response.text)
 public_time = data_dict['data']['end_update_time'].split()
 
 # 保存risk_data 日期 时间.log
-filepath = './data/risk_data' + ' ' + public_time[0] + ' ' + public_time[1] + '.log'
-with open('./data/risk_data' + ' ' + public_time[0] + ' ' + public_time[1] + '.log', 'w', encoding='utf-8') as f:
+filepath = './data/risk_data' + ' ' + public_time[0] + ' ' + public_time[1] + '.json'
+with open(filepath, 'w', encoding='utf-8') as f:
     f.write(response.text)
     print("%s数据写入文件" % public_time[0] + public_time[1])
 

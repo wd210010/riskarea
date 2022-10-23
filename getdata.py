@@ -116,6 +116,8 @@ def trans_gd(addr_list):
             gd.append(address_to_gd(address[0:60]))  # 百度地图查询最多60个字符
         except:
             err_addr.append(address)
+            time.sleep(0.5)
+            gd.append(address_to_gd(address[0:60]))
     return gd, err_addr
 
 
